@@ -1348,7 +1348,10 @@ const HERALD_CARDS = {
 };
 
 // ══════════════════════════════════════
-// ZORLUK SİSTEMİ — Simetrik + Dinamik
+// ZORLUK SİSTEMİ — Simetrik + Çift Yönlü Dinamik
+// Hedef kazanma oranı: ortalama <%10, ileri düzey <%5
+// Relief modu kritik statı kurtarmak için şans verir (adil);
+// Pressure modu iyi oyuncuya baskı artırır (zor).
 // ══════════════════════════════════════
 const TIER_VALS = { w:13, n:16, s:20 };  // Simetrik: boost = debuff
 
@@ -1363,6 +1366,7 @@ let currentCard = null;
 // Dinamik zorluk takip değişkenleri
 let stability = 0;      // Arka arkaya "iyi" tur sayısı (hiçbir stat düşmedi)
 let pressureLevel = 0;  // 0=normal, 1=orta baskı, 2=yüksek baskı
+let reliefMode = false; // Kritik stat (<20) varsa hafif kurtarıcı kart şansı
 
 // Haberci kart cooldown — her anahtar "stat_dir" formatında, değer true=kullanıldı
 let heraldUsed = {};    // örn: {"hazine_low": true, "ordu_high": true}
@@ -1382,34 +1386,57 @@ function getMaxStat() {
   return Object.entries(stats).reduce((a,b) => a[1]>b[1]?a:b)[0];
 }
 
-// Dinamik kart seçimi: istikrarlı oyuncuya hedefli baskı
+// Dinamik kart seçimi: çift yönlü adaptasyon
+// — İyi gidiyorsa: hedefli baskı (zor)
+// — Kritik statta: kurtarıcı kart şansı (adil, kontrol oyuncuda)
 function nextCard() {
   if(ci >= order.length) { shuffle(); ci = 0; }
 
-  // Baskı seviyesi yoksa normal kart
+  // ── Relief Modu: herhangi bir stat kritik (<20) ──
+  // Oyuncuya haksız cascade'i önlemek için kurtarıcı kart şansı
+  if(reliefMode) {
+    const critStat = Object.entries(stats).find(([,v]) => v < 20)?.[0];
+    if(critStat) {
+      const window = order.slice(ci, Math.min(ci + 8, order.length));
+      let best = null, bestScore = -1;
+      for(const idx of window) {
+        const c = CARDS[idx];
+        let score = 0;
+        if(c.boost === critStat) score += 3;
+        if(c.tier === 'w') score += 1; // Zayıf kart tercih et (daha az yan hasar)
+        if(score > bestScore) { bestScore = score; best = idx; }
+      }
+      // Yalnızca boost tam eşleşirse swap yap (%50 şans — kontrol oyuncuda)
+      if(best !== null && bestScore >= 3 && Math.random() < 0.5) {
+        const pos = order.indexOf(best, ci);
+        [order[ci], order[pos]] = [order[pos], order[ci]];
+      }
+      return CARDS[order[ci]];
+    }
+  }
+
+  // ── Normal / Baskı Modu ──
   if(pressureLevel === 0) {
     return CARDS[order[ci]];
   }
 
-  // Baskı varsa: en yüksek statı debuff eden VEYA en düşük statı debuff eden kart ara
+  // Baskı varsa: hedefli debuff kartı ara (pencere genişledi: 15 kart)
+  // P2 → en zayıf statı vur (acımasız), P1 → en güçlü statı törpüle
   const targetDebuff = pressureLevel >= 2 ? getMinStat() : getMaxStat();
-  const remaining = order.slice(ci, Math.min(ci + 12, order.length));
+  const window = order.slice(ci, Math.min(ci + 15, order.length));
 
-  // Kalan 12 kart içinde en uygun kartı bul
   let best = null, bestScore = -1;
-  for(const idx of remaining) {
+  for(const idx of window) {
     const c = CARDS[idx];
     let score = 0;
-    if(pressureLevel >= 2 && c.debuff === targetDebuff) score += 3; // Düşük statı vur
-    if(pressureLevel === 1 && c.debuff === targetDebuff) score += 2; // Yüksek statı vur
+    if(pressureLevel >= 2 && c.debuff === targetDebuff) score += 4; // Acımasız baskı
+    if(pressureLevel === 1 && c.debuff === targetDebuff) score += 2;
     if(c.tier === 's') score += 1; // Güçlü kart tercih et
     if(score > bestScore) { bestScore = score; best = idx; }
   }
 
-  // Uygun kart bulunduysa ve baskı yeterliyse onu çıkar
   const threshold = pressureLevel >= 2 ? 1 : 2;
   if(best !== null && bestScore >= threshold) {
-    // Swap: best kartı sıradaki pozisyona al
     const pos = order.indexOf(best, ci);
     [order[ci], order[pos]] = [order[pos], order[ci]];
   }
@@ -1701,29 +1728,33 @@ function applyChoice(side) {
   }
   ci++;
 
-  // Pasif bozulma — hafif ama sürekli
-  stats.hazine = Math.max(0, stats.hazine - 0.5);
-  stats.ordu   = Math.max(0, stats.ordu   - 0.2);
-  stats.halk   = Math.max(0, stats.halk   - 0.2);
-  stats.din    = Math.max(0, stats.din    - 0.2);
+  // Pasif bozulma — güçlendirildi: hazine kırılgan, diğerleri de baskı altında
+  stats.hazine = Math.max(0, stats.hazine - 0.8);  // 50 turda −40
+  stats.ordu   = Math.max(0, stats.ordu   - 0.4);  // 50 turda −20
+  stats.halk   = Math.max(0, stats.halk   - 0.4);  // 50 turda −20
+  stats.din    = Math.max(0, stats.din    - 0.35); // 50 turda −17.5
 
   // ── Dinamik Zorluk Takibi ──
-  const minStatNow = Math.min(...Object.values(stats));
+  const minStatNow    = Math.min(...Object.values(stats));
   const minStatBefore = Math.min(...Object.values(prevStats));
-  const allAbove30 = Object.values(stats).every(v => v > 30);
+  // Daha sıkı koşul: tüm statlar 35 üstünde OLMALI ve en az stat −1'den fazla düşmemeli
+  const allAbove35 = Object.values(stats).every(v => v > 35);
 
-  if(allAbove30 && minStatNow >= minStatBefore - 2) {
-    // Oyuncu iyi gidiyor: istikrar puanı artar
-    stability = Math.min(stability + 1, 12);
+  if(allAbove35 && minStatNow >= minStatBefore - 1) {
+    // Oyuncu iyi gidiyor: baskı hızla artar
+    stability = Math.min(stability + 1, 10);
   } else {
-    // Bir stat düştü: baskıyı azalt
+    // Bir stat geriledi: baskı azalır (adil)
     stability = Math.max(0, stability - 2);
   }
 
-  // Baskı seviyesi belirle
-  if(stability >= 8)      pressureLevel = 2; // Yüksek baskı
-  else if(stability >= 4) pressureLevel = 1; // Orta baskı
+  // Baskı eşikleri düşürüldü — baskı daha çabuk devreye girer
+  if(stability >= 6)      pressureLevel = 2; // Yüksek baskı (eski: 8)
+  else if(stability >= 3) pressureLevel = 1; // Orta baskı  (eski: 4)
   else                    pressureLevel = 0; // Normal
+
+  // Relief modu: kritik stat tespiti
+  reliefMode = Object.values(stats).some(v => v < 20);
 
   yr++;
 
@@ -1826,7 +1857,7 @@ function gameOver(isLoss) {
 function restartGame() {
   stats = {hazine:50, ordu:50, halk:50, din:50};
   yr=1; ci=0; anim=false;
-  stability=0; pressureLevel=0;
+  stability=0; pressureLevel=0; reliefMode=false;
   heraldUsed = {};
   shuffle();
   currentCard = TUTORIAL_CARD;
