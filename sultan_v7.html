@@ -1353,6 +1353,39 @@ const HERALD_CARDS = {
 const TIER_VALS = { w:13, n:16, s:20 };  // Simetrik: boost = debuff
 
 // ══════════════════════════════════════
+// ZORLUK SEVİYELERİ — Sabit Ayarlar
+// Not: Oyun her zaman 'hard' (zor) modda çalışır.
+//      Kolay/normal ayarları ileride kullanılmak üzere kodda mevcuttur.
+//      Menüde zorluk seçim ekranı bulunmamaktadır.
+// ══════════════════════════════════════
+const DIFFICULTY_CONFIG = {
+  easy: {
+    initialStats:  { hazine:55, ordu:55, halk:55, din:55 },
+    passive:       { hazine:0.2, ordu:0.1, halk:0.1, din:0.1 },
+    maxStability:  15,
+    pressureMid:   6,   // stability >= bu → orta baskı
+    pressureHigh:  12,  // stability >= bu → yüksek baskı
+  },
+  normal: {
+    initialStats:  { hazine:50, ordu:50, halk:50, din:50 },
+    passive:       { hazine:0.5, ordu:0.2, halk:0.2, din:0.2 },
+    maxStability:  12,
+    pressureMid:   4,
+    pressureHigh:  8,
+  },
+  hard: {
+    initialStats:  { hazine:45, ordu:45, halk:45, din:45 },
+    passive:       { hazine:0.8, ordu:0.4, halk:0.4, din:0.4 },
+    maxStability:  10,
+    pressureMid:   3,   // baskı daha hızlı birikir
+    pressureHigh:  6,
+  },
+};
+
+// Aktif zorluk — menüde seçim yoktur, oyun daima ZOR modda çalışır
+const currentDifficulty = 'hard';
+
+// ══════════════════════════════════════
 // OYUN DURUMU
 // ══════════════════════════════════════
 let stats = {hazine:50, ordu:50, halk:50, din:50};
@@ -1701,29 +1734,31 @@ function applyChoice(side) {
   }
   ci++;
 
-  // Pasif bozulma — hafif ama sürekli
-  stats.hazine = Math.max(0, stats.hazine - 0.5);
-  stats.ordu   = Math.max(0, stats.ordu   - 0.2);
-  stats.halk   = Math.max(0, stats.halk   - 0.2);
-  stats.din    = Math.max(0, stats.din    - 0.2);
+  // Pasif bozulma — zorluk seviyesine göre
+  const _p = DIFFICULTY_CONFIG[currentDifficulty].passive;
+  stats.hazine = Math.max(0, stats.hazine - _p.hazine);
+  stats.ordu   = Math.max(0, stats.ordu   - _p.ordu);
+  stats.halk   = Math.max(0, stats.halk   - _p.halk);
+  stats.din    = Math.max(0, stats.din    - _p.din);
 
   // ── Dinamik Zorluk Takibi ──
   const minStatNow = Math.min(...Object.values(stats));
   const minStatBefore = Math.min(...Object.values(prevStats));
   const allAbove30 = Object.values(stats).every(v => v > 30);
 
+  const _d = DIFFICULTY_CONFIG[currentDifficulty];
   if(allAbove30 && minStatNow >= minStatBefore - 2) {
     // Oyuncu iyi gidiyor: istikrar puanı artar
-    stability = Math.min(stability + 1, 12);
+    stability = Math.min(stability + 1, _d.maxStability);
   } else {
     // Bir stat düştü: baskıyı azalt
     stability = Math.max(0, stability - 2);
   }
 
-  // Baskı seviyesi belirle
-  if(stability >= 8)      pressureLevel = 2; // Yüksek baskı
-  else if(stability >= 4) pressureLevel = 1; // Orta baskı
-  else                    pressureLevel = 0; // Normal
+  // Baskı seviyesi belirle (zorluk seviyesine göre eşikler)
+  if(stability >= _d.pressureHigh)      pressureLevel = 2; // Yüksek baskı
+  else if(stability >= _d.pressureMid)  pressureLevel = 1; // Orta baskı
+  else                                  pressureLevel = 0; // Normal
 
   yr++;
 
@@ -1824,7 +1859,8 @@ function gameOver(isLoss) {
 }
 
 function restartGame() {
-  stats = {hazine:50, ordu:50, halk:50, din:50};
+  const dcfg = DIFFICULTY_CONFIG[currentDifficulty];
+  stats = {...dcfg.initialStats};
   yr=1; ci=0; anim=false;
   stability=0; pressureLevel=0;
   heraldUsed = {};
