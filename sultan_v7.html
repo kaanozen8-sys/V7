@@ -651,6 +651,34 @@
   }
   #how-close:hover { opacity: .85; }
 
+  /* ══ ZORLUK SEÇİCİ ══ */
+  #diff-label {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: .6rem; letter-spacing: .18em;
+    color: var(--gold); opacity: .55;
+    text-align: center; margin: 14px 0 6px;
+  }
+  #difficulty-selector {
+    display: flex; gap: 7px; justify-content: center;
+    margin-bottom: 12px;
+  }
+  .diff-btn {
+    flex: 1;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: .52rem; letter-spacing: .1em;
+    padding: 9px 2px; border-radius: 8px;
+    border: 1px solid rgba(212,175,55,0.25);
+    background: rgba(255,255,255,0.03);
+    color: var(--text); cursor: pointer;
+    transition: all .2s; opacity: .55;
+  }
+  .diff-btn.active {
+    border-color: var(--gold);
+    background: rgba(212,175,55,0.13);
+    color: var(--gold); opacity: 1;
+  }
+  .diff-btn:hover { opacity: .82; }
+
   /* Oyun başlayınca yukarıdan gelmesi için */
   #game {
     transition: transform .65s cubic-bezier(.4,0,.2,1), opacity .45s ease;
@@ -762,6 +790,14 @@
   </div>
 
   <div id="menu-divider"></div>
+
+  <!-- Zorluk Seçici -->
+  <div id="diff-label">ZORLUK SEVİYESİ</div>
+  <div id="difficulty-selector">
+    <button class="diff-btn" id="diff-kolay" onclick="setDifficulty('kolay')">KOLAY</button>
+    <button class="diff-btn active" id="diff-normal" onclick="setDifficulty('normal')">NORMAL</button>
+    <button class="diff-btn" id="diff-zorlu" onclick="setDifficulty('zorlu')">ZORLU</button>
+  </div>
 
   <!-- Butonlar -->
   <div id="menu-buttons">
@@ -1364,6 +1400,41 @@ let currentCard = null;
 let stability = 0;      // Arka arkaya "iyi" tur sayısı (hiçbir stat düşmedi)
 let pressureLevel = 0;  // 0=normal, 1=orta baskı, 2=yüksek baskı
 
+// ══ OYUNCU ZORLUK SEÇİMİ ══
+let selectedDifficulty = 'normal';
+
+// Her zorluk için yapılandırma
+const DIFF_CFG = {
+  kolay: {
+    startStats:   {hazine:55, ordu:55, halk:55, din:55},
+    decay:        {hazine:0.3, ordu:0.1, halk:0.1, din:0.1},
+    stab:         {mid:6, high:10, max:12},
+    pressure:     {lookahead:8,  score1:1, score2:2, threshold:2},
+    dangerThresh: 10
+  },
+  normal: {
+    startStats:   {hazine:45, ordu:45, halk:45, din:45},
+    decay:        {hazine:0.7, ordu:0.35, halk:0.35, din:0.35},
+    stab:         {mid:4, high:8,  max:12},
+    pressure:     {lookahead:12, score1:2, score2:4, threshold:1},
+    dangerThresh: 15
+  },
+  zorlu: {
+    startStats:   {hazine:38, ordu:38, halk:38, din:38},
+    decay:        {hazine:1.2, ordu:0.6, halk:0.6, din:0.6},
+    stab:         {mid:3, high:6,  max:10},
+    pressure:     {lookahead:16, score1:3, score2:6, threshold:1},
+    dangerThresh: 22
+  }
+};
+
+function setDifficulty(d) {
+  selectedDifficulty = d;
+  ['kolay','normal','zorlu'].forEach(x => {
+    document.getElementById('diff-'+x).classList.toggle('active', x === d);
+  });
+}
+
 // Haberci kart cooldown — her anahtar "stat_dir" formatında, değer true=kullanıldı
 let heraldUsed = {};    // örn: {"hazine_low": true, "ordu_high": true}
 
@@ -1391,27 +1462,47 @@ function nextCard() {
     return CARDS[order[ci]];
   }
 
+  const pcfg = DIFF_CFG[selectedDifficulty].pressure;
+
   // Baskı varsa: en yüksek statı debuff eden VEYA en düşük statı debuff eden kart ara
   const targetDebuff = pressureLevel >= 2 ? getMinStat() : getMaxStat();
-  const remaining = order.slice(ci, Math.min(ci + 12, order.length));
+  const remaining = order.slice(ci, Math.min(ci + pcfg.lookahead, order.length));
 
-  // Kalan 12 kart içinde en uygun kartı bul
+  // Kalan kartlar içinde en uygun kartı bul
   let best = null, bestScore = -1;
   for(const idx of remaining) {
     const c = CARDS[idx];
     let score = 0;
-    if(pressureLevel >= 2 && c.debuff === targetDebuff) score += 3; // Düşük statı vur
-    if(pressureLevel === 1 && c.debuff === targetDebuff) score += 2; // Yüksek statı vur
+    if(pressureLevel >= 2 && c.debuff === targetDebuff) score += pcfg.score2; // En zayıf statı vur
+    if(pressureLevel === 1 && c.debuff === targetDebuff) score += pcfg.score1; // En güçlü statı vur
     if(c.tier === 's') score += 1; // Güçlü kart tercih et
     if(score > bestScore) { bestScore = score; best = idx; }
   }
 
   // Uygun kart bulunduysa ve baskı yeterliyse onu çıkar
-  const threshold = pressureLevel >= 2 ? 1 : 2;
-  if(best !== null && bestScore >= threshold) {
-    // Swap: best kartı sıradaki pozisyona al
+  if(best !== null && bestScore >= pcfg.threshold) {
     const pos = order.indexOf(best, ci);
     [order[ci], order[pos]] = [order[pos], order[ci]];
+  }
+
+  // Zorlu + yüksek baskıda %40 olasılıkla çift baskı: bir sonraki kartı da hedefle
+  if(selectedDifficulty === 'zorlu' && pressureLevel >= 2 && Math.random() < 0.40) {
+    const next = ci + 1;
+    if(next < order.length) {
+      const rem2 = order.slice(next, Math.min(next + pcfg.lookahead, order.length));
+      let best2 = null, bestScore2 = -1;
+      for(const idx of rem2) {
+        const c = CARDS[idx];
+        let score = 0;
+        if(c.debuff === targetDebuff) score += pcfg.score2;
+        if(c.tier === 's') score += 1;
+        if(score > bestScore2) { bestScore2 = score; best2 = idx; }
+      }
+      if(best2 !== null && bestScore2 >= pcfg.threshold) {
+        const pos2 = order.indexOf(best2, next);
+        [order[next], order[pos2]] = [order[pos2], order[next]];
+      }
+    }
   }
 
   return CARDS[order[ci]];
@@ -1637,11 +1728,12 @@ function renderCard() {
 }
 
 function renderStats() {
+  const thresh = DIFF_CFG[selectedDifficulty].dangerThresh;
   ['hazine','ordu','halk','din'].forEach(s => {
     const v = Math.max(0, Math.min(100, stats[s]));
     const bar = document.getElementById('bar-'+s);
     bar.style.width = v+'%';
-    if(v <= 15) bar.classList.add('danger');
+    if(v <= thresh) bar.classList.add('danger');
     else bar.classList.remove('danger');
   });
 }
@@ -1701,29 +1793,31 @@ function applyChoice(side) {
   }
   ci++;
 
-  // Pasif bozulma — hafif ama sürekli
-  stats.hazine = Math.max(0, stats.hazine - 0.5);
-  stats.ordu   = Math.max(0, stats.ordu   - 0.2);
-  stats.halk   = Math.max(0, stats.halk   - 0.2);
-  stats.din    = Math.max(0, stats.din    - 0.2);
+  // Pasif bozulma — zorluk seviyesine göre
+  const dcfg = DIFF_CFG[selectedDifficulty];
+  stats.hazine = Math.max(0, stats.hazine - dcfg.decay.hazine);
+  stats.ordu   = Math.max(0, stats.ordu   - dcfg.decay.ordu);
+  stats.halk   = Math.max(0, stats.halk   - dcfg.decay.halk);
+  stats.din    = Math.max(0, stats.din    - dcfg.decay.din);
 
   // ── Dinamik Zorluk Takibi ──
+  const scfg = dcfg.stab;
   const minStatNow = Math.min(...Object.values(stats));
   const minStatBefore = Math.min(...Object.values(prevStats));
   const allAbove30 = Object.values(stats).every(v => v > 30);
 
   if(allAbove30 && minStatNow >= minStatBefore - 2) {
     // Oyuncu iyi gidiyor: istikrar puanı artar
-    stability = Math.min(stability + 1, 12);
+    stability = Math.min(stability + 1, scfg.max);
   } else {
     // Bir stat düştü: baskıyı azalt
     stability = Math.max(0, stability - 2);
   }
 
-  // Baskı seviyesi belirle
-  if(stability >= 8)      pressureLevel = 2; // Yüksek baskı
-  else if(stability >= 4) pressureLevel = 1; // Orta baskı
-  else                    pressureLevel = 0; // Normal
+  // Baskı seviyesi belirle (eşikler zorluk seviyesine göre)
+  if(stability >= scfg.high)      pressureLevel = 2; // Yüksek baskı
+  else if(stability >= scfg.mid)  pressureLevel = 1; // Orta baskı
+  else                            pressureLevel = 0; // Normal
 
   yr++;
 
@@ -1824,7 +1918,8 @@ function gameOver(isLoss) {
 }
 
 function restartGame() {
-  stats = {hazine:50, ordu:50, halk:50, din:50};
+  const cfg = DIFF_CFG[selectedDifficulty];
+  stats = {...cfg.startStats};
   yr=1; ci=0; anim=false;
   stability=0; pressureLevel=0;
   heraldUsed = {};
