@@ -25,13 +25,19 @@
   * { margin:0; padding:0; box-sizing:border-box; }
 
   html {
+    width: 100%;
     height: 100%;
     height: -webkit-fill-available;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
   body {
+    width: 100%;
     min-height: 100vh;
     min-height: -webkit-fill-available;
     overflow: hidden;
+    overflow-x: hidden;
     background: var(--deep);
     color: var(--text);
     font-family: 'Crimson Pro', Georgia, serif;
@@ -77,10 +83,12 @@
     position: relative; z-index: 1;
     width: 100%; max-width: 420px;
     height: 100vh;
+    height: 100dvh;
     height: -webkit-fill-available;
     display: flex; flex-direction: column;
     align-items: center;
-    padding: 10px 14px 8px;
+    padding: 10px 14px env(safe-area-inset-bottom, 8px);
+    box-sizing: border-box;
   }
 
   /* ══ HEADER ══ */
@@ -138,7 +146,7 @@
   .stat[data-stat=halk]   .stat-bar { background: linear-gradient(90deg,#186030,var(--halk));   box-shadow: 0 0 7px rgba(64,160,96,.7); }
   .stat[data-stat=din]    .stat-bar { background: linear-gradient(90deg,#4030a0,var(--din));    box-shadow: 0 0 7px rgba(144,112,208,.7); }
   .stat-lbl {
-    font-size: clamp(.48rem, 1.8vw, .56rem); letter-spacing: .14em;
+    font-size: clamp(.7rem, 2vw, .8rem); letter-spacing: .14em;
     color: #d4bc88; text-transform: uppercase;
     text-shadow: 0 1px 3px rgba(0,0,0,.9);
     font-weight: 600;
@@ -158,7 +166,7 @@
   /* Ghost cards */
   .ghost {
     position: absolute;
-    width: min(83%, 310px);
+    width: clamp(280px, 90vw, 400px);
     height: min(96%, 480px);
     border-radius: 18px;
     background: linear-gradient(180deg, rgba(84,57,28,.55), rgba(37,22,10,.65));
@@ -170,7 +178,7 @@
   /* ══ CARD ══ */
   #card {
     position: relative; z-index: 10;
-    width: min(83%, 310px);
+    width: clamp(280px, 90vw, 400px);
     height: min(96%, 480px);
     border-radius: 18px;
     /* Parşömen temel rengi */
@@ -235,8 +243,8 @@
   .port-wrap {
     flex-shrink: 0;
     position: relative;
-    width: clamp(62px, 15vw, 76px);
-    height: clamp(62px, 15vw, 76px);
+    width: clamp(68px, 18vw, 80px);
+    height: clamp(68px, 18vw, 80px);
     margin: 4px auto;
   }
   /* Sadece çerçeve SVG'si absolute */
@@ -272,7 +280,7 @@
   .card-char {
     flex-shrink: 0;
     text-align: center; font-family: 'Cinzel Decorative', serif;
-    font-size: clamp(.46rem, 1.5vw, .55rem); color: #7a572a;
+    font-size: clamp(.7rem, 1.8vw, .8rem); color: #7a572a;
     letter-spacing: .12em; padding: 0 8px; margin-bottom: 2px;
   }
 
@@ -289,7 +297,7 @@
     flex: 1 1 0;
     min-height: 0;
     padding: 0 14px 6px;
-    font-size: clamp(.72rem, 2.1vw, .92rem);
+    font-size: clamp(.875rem, 2.5vw, 1rem);
     line-height: 1.6;
     color: #2a1608;
     font-weight: 500;
@@ -312,9 +320,13 @@
   }
   .choice {
     padding: clamp(5px, 1.5vh, 9px) 8px;
-    font-size: clamp(.6rem, 1.8vw, .73rem);
+    min-height: 44px;
+    font-size: clamp(.75rem, 2.2vw, .85rem);
     text-align: center; line-height: 1.3; font-weight: 500;
     cursor: pointer; transition: background .15s;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    -webkit-tap-highlight-color: transparent;
   }
   .choice:hover { background: rgba(93,58,25,.07); }
   .choice:active { background: rgba(93,58,25,.12); }
@@ -328,18 +340,18 @@
     z-index: 20; pointer-events: none; opacity: 0;
     transition: opacity .12s; padding: 8px; border-radius: 50%; font-size: 1.3rem;
   }
-  #hl { left: -36px; background: rgba(20,60,120,.6); color: #a8d8ff; }
-  #hr { right: -36px; background: rgba(20,80,40,.6); color: #a8ffbb; }
+  #hl { left: -4px; background: rgba(20,60,120,.6); color: #a8d8ff; }
+  #hr { right: -4px; background: rgba(20,80,40,.6); color: #a8ffbb; }
 
   /* ══ BOTTOM ══ */
   #instr {
     flex-shrink: 0;
-    font-size: clamp(.5rem, 1.8vw, .6rem);
+    font-size: clamp(.7rem, 2vw, .8rem);
     color: var(--text-dim); letter-spacing: .14em;
     text-transform: uppercase; opacity: .7; margin-bottom: 2px;
   }
   #kh { flex-shrink: 0; display: flex; gap: 14px; }
-  .kh { font-size: clamp(.5rem, 1.8vw, .6rem); color: var(--text-dim); }
+  .kh { font-size: clamp(.7rem, 2vw, .8rem); color: var(--text-dim); }
   .kb {
     display: inline-block; padding: 1px 5px; border-radius: 3px;
     background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
