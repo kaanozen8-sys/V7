@@ -1393,16 +1393,16 @@ function nextCard() {
 
   // Baskı varsa: en yüksek statı debuff eden VEYA en düşük statı debuff eden kart ara
   const targetDebuff = pressureLevel >= 2 ? getMinStat() : getMaxStat();
-  const remaining = order.slice(ci, Math.min(ci + 12, order.length));
+  const remaining = order.slice(ci, Math.min(ci + 16, order.length));
 
-  // Kalan 12 kart içinde en uygun kartı bul
+  // Kalan 16 kart içinde en uygun kartı bul
   let best = null, bestScore = -1;
   for(const idx of remaining) {
     const c = CARDS[idx];
     let score = 0;
-    if(pressureLevel >= 2 && c.debuff === targetDebuff) score += 3; // Düşük statı vur
-    if(pressureLevel === 1 && c.debuff === targetDebuff) score += 2; // Yüksek statı vur
-    if(c.tier === 's') score += 1; // Güçlü kart tercih et
+    if(pressureLevel >= 2 && c.debuff === targetDebuff) score += 4; // Düşük statı sert vur
+    if(pressureLevel === 1 && c.debuff === targetDebuff) score += 3; // Yüksek statı vur
+    if(c.tier === 's') score += 2; // Güçlü kart güçlü tercih
     if(score > bestScore) { bestScore = score; best = idx; }
   }
 
@@ -1701,28 +1701,28 @@ function applyChoice(side) {
   }
   ci++;
 
-  // Pasif bozulma — hafif ama sürekli
-  stats.hazine = Math.max(0, stats.hazine - 0.5);
-  stats.ordu   = Math.max(0, stats.ordu   - 0.2);
-  stats.halk   = Math.max(0, stats.halk   - 0.2);
-  stats.din    = Math.max(0, stats.din    - 0.2);
+  // Pasif bozulma — zorlu ama adil baskı
+  stats.hazine = Math.max(0, stats.hazine - 0.7);
+  stats.ordu   = Math.max(0, stats.ordu   - 0.25);
+  stats.halk   = Math.max(0, stats.halk   - 0.25);
+  stats.din    = Math.max(0, stats.din    - 0.25);
 
   // ── Dinamik Zorluk Takibi ──
   const minStatNow = Math.min(...Object.values(stats));
   const minStatBefore = Math.min(...Object.values(prevStats));
-  const allAbove30 = Object.values(stats).every(v => v > 30);
+  const allAbove32 = Object.values(stats).every(v => v > 32);
 
-  if(allAbove30 && minStatNow >= minStatBefore - 2) {
-    // Oyuncu iyi gidiyor: istikrar puanı artar
-    stability = Math.min(stability + 1, 12);
+  if(allAbove32 && minStatNow >= minStatBefore - 1) {
+    // Oyuncu iyi gidiyor: istikrar puanı artar (maks 10)
+    stability = Math.min(stability + 1, 10);
   } else {
-    // Bir stat düştü: baskıyı azalt
-    stability = Math.max(0, stability - 2);
+    // Bir stat düştü: baskıyı hızla azalt
+    stability = Math.max(0, stability - 3);
   }
 
-  // Baskı seviyesi belirle
-  if(stability >= 8)      pressureLevel = 2; // Yüksek baskı
-  else if(stability >= 4) pressureLevel = 1; // Orta baskı
+  // Baskı seviyesi belirle — eşikler düşürüldü, baskı daha çabuk devreye girer
+  if(stability >= 6)      pressureLevel = 2; // Yüksek baskı
+  else if(stability >= 3) pressureLevel = 1; // Orta baskı
   else                    pressureLevel = 0; // Normal
 
   yr++;
