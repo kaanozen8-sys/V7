@@ -83,8 +83,8 @@
     position: relative; z-index: 1;
     width: 100%; max-width: 420px;
     height: 100vh;
-    height: 100dvh;
     height: -webkit-fill-available;
+    height: 100svh;
     display: flex; flex-direction: column;
     align-items: center;
     padding: 10px 14px env(safe-area-inset-bottom, 8px);
@@ -172,7 +172,8 @@
   .ghost {
     position: absolute;
     width: clamp(280px, 90vw, 400px);
-    height: min(96%, 480px);
+    height: 480px;
+    height: min(72svh, 480px);
     border-radius: 18px;
     background: linear-gradient(180deg, rgba(84,57,28,.55), rgba(37,22,10,.65));
     border: 1px solid rgba(201,168,76,0.10);
@@ -184,7 +185,8 @@
   #card {
     position: relative; z-index: 10;
     width: clamp(280px, 90vw, 400px);
-    height: min(96%, 480px);
+    height: 480px;
+    height: min(72svh, 480px);
     border-radius: 18px;
     /* Parşömen temel rengi */
     background: #f0deb0;
@@ -242,15 +244,15 @@
   #card > * { position: relative; z-index: 1; }
 
   /* Card top ornament */
-  .top-orn { padding: 8px 14px 0; flex-shrink: 0; }
+  .top-orn { padding: 5px 14px 0; flex-shrink: 0; }
 
   /* Emoji portrait */
   .port-wrap {
-    flex-shrink: 0;
+    flex-shrink: 1;
     position: relative;
-    width: clamp(68px, 18vw, 80px);
-    height: clamp(68px, 18vw, 80px);
-    margin: 4px auto;
+    width: clamp(56px, 15vw, 76px);
+    height: clamp(56px, 15vw, 76px);
+    margin: 2px auto;
   }
   /* Sadece çerçeve SVG'si absolute */
   .port-wrap > svg {
@@ -295,22 +297,22 @@
     text-transform: uppercase; margin-bottom: 2px;
   }
 
-  .hat-div { width: 88%; margin: 0 auto 5px; display: block; flex-shrink: 0; }
+  .hat-div { width: 88%; margin: 0 auto 3px; display: block; flex-shrink: 0; }
 
   /* Card text — kalp bu kısım */
   .card-text {
-    flex: 1 1 0;
+    flex: 1 1 auto;
     min-height: 0;
-    padding: 0 16px 8px;
-    font-size: clamp(.95rem, 2.8vw, 1.08rem);
-    line-height: 1.65;
+    padding: 4px 16px 8px;
+    font-size: clamp(.85rem, 2.6vw, 1.08rem);
+    line-height: 1.55;
     color: #1a0c04;
     font-weight: 600;
     text-align: center;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
+    overflow: visible;
     word-break: break-word;
     hyphens: auto;
     text-shadow: 0 1px 0 rgba(255,240,200,0.6);
