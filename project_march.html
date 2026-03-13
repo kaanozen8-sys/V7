@@ -1416,6 +1416,9 @@ let pressureLevel = 0;  // 0=normal, 1=orta baskı, 2=yüksek baskı
 // Haberci kart cooldown — her anahtar "stat_dir" formatında, değer true=kullanıldı
 let heraldUsed = {};    // örn: {"hazine_low": true, "ordu_high": true}
 
+// Trait (geçmiş) sistemi — her stat için %10 kayıp azaltma
+let traitReductions = {hazine:0, ordu:0, halk:0, din:0};
+
 function shuffle() {
   order = [...Array(CARDS.length).keys()];
   for(let i=order.length-1;i>0;i--) {
@@ -1671,13 +1674,19 @@ function renderCard() {
   } else {
     document.getElementById('btn-l').style.visibility = 'visible';
     document.getElementById('btn-r').style.visibility = 'visible';
-    // Tutorial kartı için hilal ikonu
-    if (c.type === 'tutorial') {
+    // Tutorial / saltanat başlangıcı / trait kartı için hilal ikonu
+    if (c.type === 'tutorial' || c.type === 'saltanat_baslangici' || c.type === 'trait') {
       iconEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22" fill="none" stroke="#4a2e0e" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:62%;height:62%;display:block"><path d="M15,4 Q9,5 8,11 Q7,17 13,19 Q7,19 4,13.5 Q1,8 5.5,5 Q8.5,2.5 15,4Z" fill="rgba(74,46,14,0.15)"/><circle cx="16.5" cy="9" r="1.5" fill="#4a2e0e" stroke="none"/></svg>';
     } else {
       iconEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22" fill="none" stroke="#4a2e0e" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:62%;height:62%;display:block">' + getIcon(c.em) + '</svg>';
     }
-    document.getElementById('card-char').textContent = '';
+    if (c.type === 'saltanat_baslangici') {
+      document.getElementById('card-char').textContent = '✦ Saltanat Başlangıcı ✦';
+    } else if (c.type === 'trait') {
+      document.getElementById('card-char').textContent = '✦ Geçmiş ✦';
+    } else {
+      document.getElementById('card-char').textContent = '';
+    }
     document.getElementById('card-text').textContent = c.txt;
     document.getElementById('cl').textContent = c.l;
     document.getElementById('cr').textContent = c.r;
@@ -1720,14 +1729,65 @@ function applyChoice(side) {
     return;
   }
 
-  // Tutorial kartı: stat etkilemez, normal oyuna geçer
+  // Tutorial kartı: stat etkilemez, saltanat başlangıcı kartına geçer
   if(c.type === 'tutorial') {
     CEL.style.transform = '';
     CEL.classList.add(side==='l'?'swipe-l':'swipe-r');
     setTimeout(() => {
       CEL.classList.remove('swipe-l','swipe-r');
       CEL.style.opacity = '0'; CEL.style.transform = '';
-      currentCard = nextCard();
+      currentCard = SALTANAT_BASLANGICI_CARD;
+      renderCard();
+      requestAnimationFrame(() => {
+        CEL.style.opacity = '1';
+        CEL.classList.add('pop-in');
+        setTimeout(() => { CEL.classList.remove('pop-in'); anim=false; }, 380);
+      });
+    }, 420);
+    return;
+  }
+
+  // Saltanat başlangıcı kartı: sol=rastgele trait, sağ=trait kartları sırayla
+  if(c.type === 'saltanat_baslangici') {
+    CEL.style.transform = '';
+    CEL.classList.add(side==='l'?'swipe-l':'swipe-r');
+    setTimeout(() => {
+      CEL.classList.remove('swipe-l','swipe-r');
+      CEL.style.opacity = '0'; CEL.style.transform = '';
+      if(side === 'l') {
+        applyRandomTraits();
+        currentCard = nextCard();
+      } else {
+        currentCard = TRAIT_CARDS[0];
+      }
+      renderStats();
+      renderCard();
+      requestAnimationFrame(() => {
+        CEL.style.opacity = '1';
+        CEL.classList.add('pop-in');
+        setTimeout(() => { CEL.classList.remove('pop-in'); anim=false; }, 380);
+      });
+    }, 420);
+    return;
+  }
+
+  // Trait kartı: seçilen traitin stat bonusu ve kayıp azaltması uygulanır
+  if(c.type === 'trait') {
+    const effect = side === 'l' ? c.lEffect : c.rEffect;
+    stats[effect.stat] = Math.min(100, stats[effect.stat] + effect.bonus);
+    traitReductions[effect.reduction] = 0.1;
+    CEL.style.transform = '';
+    CEL.classList.add(side==='l'?'swipe-l':'swipe-r');
+    setTimeout(() => {
+      CEL.classList.remove('swipe-l','swipe-r');
+      CEL.style.opacity = '0'; CEL.style.transform = '';
+      const nextTraitIdx = c.traitIndex + 1;
+      if(nextTraitIdx < TRAIT_CARDS.length) {
+        currentCard = TRAIT_CARDS[nextTraitIdx];
+      } else {
+        currentCard = nextCard();
+      }
+      renderStats();
       renderCard();
       requestAnimationFrame(() => {
         CEL.style.opacity = '1';
@@ -1743,19 +1803,21 @@ function applyChoice(side) {
 
   if(side === 'r') {
     stats[c.boost]  = Math.min(100, stats[c.boost]  + v);
-    stats[c.debuff] = Math.max(0,   stats[c.debuff] - v);
+    const debuffV = Math.round(v * (1 - traitReductions[c.debuff]));
+    stats[c.debuff] = Math.max(0,   stats[c.debuff] - debuffV);
   } else {
-    stats[c.boost]  = Math.max(0,   stats[c.boost]  - v);
+    const boostLossV = Math.round(v * (1 - traitReductions[c.boost]));
+    stats[c.boost]  = Math.max(0,   stats[c.boost]  - boostLossV);
     stats[c.debuff] = Math.min(100, stats[c.debuff] + v);
   }
   ci++;
 
-  // Pasif bozulma — zorluk seviyesine göre
+  // Pasif bozulma — zorluk seviyesine ve trait azaltmalarına göre
   const _p = DIFFICULTY_CONFIG[currentDifficulty].passive;
-  stats.hazine = Math.max(0, stats.hazine - _p.hazine);
-  stats.ordu   = Math.max(0, stats.ordu   - _p.ordu);
-  stats.halk   = Math.max(0, stats.halk   - _p.halk);
-  stats.din    = Math.max(0, stats.din    - _p.din);
+  stats.hazine = Math.max(0, stats.hazine - _p.hazine * (1 - traitReductions.hazine));
+  stats.ordu   = Math.max(0, stats.ordu   - _p.ordu   * (1 - traitReductions.ordu));
+  stats.halk   = Math.max(0, stats.halk   - _p.halk   * (1 - traitReductions.halk));
+  stats.din    = Math.max(0, stats.din    - _p.din    * (1 - traitReductions.din));
 
   // ── Dinamik Zorluk Takibi ──
   const minStatNow = Math.min(...Object.values(stats));
@@ -1874,12 +1936,22 @@ function gameOver(isLoss) {
   document.getElementById('ov').classList.add('on');
 }
 
+function applyRandomTraits() {
+  TRAIT_CARDS.forEach(tc => {
+    const side = Math.random() < 0.5 ? 'l' : 'r';
+    const effect = side === 'l' ? tc.lEffect : tc.rEffect;
+    stats[effect.stat] = Math.min(100, stats[effect.stat] + effect.bonus);
+    traitReductions[effect.reduction] = 0.1;
+  });
+}
+
 function restartGame() {
   const dcfg = DIFFICULTY_CONFIG[currentDifficulty];
   stats = {...dcfg.initialStats};
   yr=1; ci=0; anim=false;
   stability=0; pressureLevel=0;
   heraldUsed = {};
+  traitReductions = {hazine:0, ordu:0, halk:0, din:0};
   shuffle();
   currentCard = TUTORIAL_CARD;
 
@@ -1953,6 +2025,49 @@ const TUTORIAL_CARD = {
   l: 'Adaletle hükmetmeye geldim.',
   r: 'İlk divanı toplayalım.'
 };
+
+// ══ SALTANAT BAŞLANGIÇ KARTI ══
+const SALTANAT_BASLANGICI_CARD = {
+  type: 'saltanat_baslangici',
+  em: '☽',
+  txt: 'Tahta çıkmadan önce geçmişin üzerine düşünmek ister misin?',
+  l: 'Kader ne yazdıysa onunla başlayalım.',
+  r: 'Geçmişimi analım.'
+};
+
+// ══ TRAIT (GEÇMİŞ) KARTLARI ══
+const TRAIT_CARDS = [
+  {
+    type: 'trait',
+    traitIndex: 0,
+    em: '☽',
+    txt: 'Çocukluğunda herkes senin...',
+    l: 'Sevecen bir çocuk olduğunu söylerdi.',
+    r: 'Disiplinli bir çocuk olduğunu söylerdi.',
+    lEffect: { stat: 'halk',   bonus: 5, reduction: 'halk' },
+    rEffect: { stat: 'ordu',   bonus: 5, reduction: 'ordu' }
+  },
+  {
+    type: 'trait',
+    traitIndex: 1,
+    em: '☽',
+    txt: 'Hocaların seni hep...',
+    l: 'Terbiyeli ve edepli biri olarak anlatırdı.',
+    r: 'Çalışkan ve tutumlu biri olarak anlatırdı.',
+    lEffect: { stat: 'din',    bonus: 5, reduction: 'din' },
+    rEffect: { stat: 'hazine', bonus: 5, reduction: 'hazine' }
+  },
+  {
+    type: 'trait',
+    traitIndex: 2,
+    em: '☽',
+    txt: 'Gençliğinde daha çok...',
+    l: 'Halkın halinden anlayan biri olarak tanınırdın.',
+    r: 'Zeki bir idareci olarak tanınırdın.',
+    lEffect: { stat: 'halk',   bonus: 5, reduction: 'halk' },
+    rEffect: { stat: 'hazine', bonus: 5, reduction: 'hazine' }
+  }
+];
 
 // ══ ANA MENÜ FONKSİYONLARI ══
 let gameStarted = false; // Oyun başladı mı?
