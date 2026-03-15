@@ -395,6 +395,18 @@
   }
   #card.humor-card .card-char { color: #c0407a; }
 
+  /* ══ DÜŞÜNME KARTLARI ══ */
+  #card.thinking-card {
+    border: 2px solid rgba(0,210,200,0.75);
+    box-shadow: 0 0 28px rgba(0,210,200,0.28), 0 8px 32px rgba(0,0,0,0.45);
+  }
+  #card.thinking-card .card-char {
+    color: #00d2c8;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
   /* ══ ANIMATIONS ══ */
   @keyframes swipeL { to { transform: translateX(-130%) rotate(-20deg); opacity: 0; } }
   @keyframes swipeR { to { transform: translateX(130%)  rotate(20deg);  opacity: 0; } }
@@ -1502,6 +1514,127 @@ const HUMOR_CARDS = [
 ];
 
 // ══════════════════════════════════════
+// DÜŞÜNME KARTLARI — 3 stat etkiler, her 5–7 turda bir gelir
+// Sol=Reddet, Sağ=Kabul
+// rE: sağ seçeneğin etkileri [{s:'stat', d:delta}, ...]
+// Sol seçeneğin etkileri rE'nin tersidir (d işareti döner)
+// ══════════════════════════════════════
+const THINKING_CARDS = [
+  {
+    type:'thinking', em:'⚔️',
+    txt:'Sınır boylarından bazı savaşçılar ganimet hakkı karşılığında hizmet etmek istediklerini söylüyor.',
+    l:'Mal için gelen mal için gider.',
+    r:'Fazladan kılıçlar işimize yarar.',
+    rE:[{s:'hazine',d:8},{s:'ordu',d:8},{s:'halk',d:-12}]
+  },
+  {
+    type:'thinking', em:'⛏️',
+    txt:'Bir tepede yeni bir demir damarı bulunduğu söyleniyor. Kazı yapmak isteyenler izin bekliyor.',
+    l:'Toprağı rahat bırakın.',
+    r:'Kazıya başlayın.',
+    rE:[{s:'hazine',d:8},{s:'ordu',d:8},{s:'din',d:-12}]
+  },
+  {
+    type:'thinking', em:'🤝',
+    txt:'Uzak bir hükümdarın elçisi huzurunuza değerli hediyelerle çıkıyor.',
+    l:'Bu ne cüret!',
+    r:'Örfümüzde hediye geri çevrilmez.',
+    rE:[{s:'hazine',d:8},{s:'din',d:8},{s:'halk',d:-12}]
+  },
+  {
+    type:'thinking', em:'🗺️',
+    txt:'Avrupa\'da bazı mezhep ayrılıklarının büyüdüğü haberleri geliyor. Bir tarafla gizli ilişki kurulabileceği söyleniyor.',
+    l:'Bu bizim meselemiz değil.',
+    r:'Önce zayıflat sonra fethet.',
+    rE:[{s:'ordu',d:8},{s:'hazine',d:8},{s:'din',d:-12}]
+  },
+  {
+    type:'thinking', em:'🚩',
+    txt:'Sarayda bazıları büyük bir sefer çağrısı yapılmasını istiyor.',
+    l:'Henüz zamanı değil.',
+    r:'Sancağı getirin.',
+    rE:[{s:'ordu',d:8},{s:'din',d:8},{s:'hazine',d:-12}]
+  },
+  {
+    type:'thinking', em:'📯',
+    txt:'Ordu içinde askerlerin maneviyatını güçlendirmek için yeni görevliler öneriliyor.',
+    l:'Gerek yok.',
+    r:'Faydalı olabilir.',
+    rE:[{s:'ordu',d:8},{s:'din',d:8},{s:'halk',d:-12}]
+  },
+  {
+    type:'thinking', em:'🛡️',
+    txt:'Sınır köylerinden bazıları kendilerini koruyabilmek için silah talep ediyor.',
+    l:'Bu iyi fikir değil.',
+    r:'Kendilerini savunabilsinler.',
+    rE:[{s:'ordu',d:8},{s:'halk',d:8},{s:'hazine',d:-12}]
+  },
+  {
+    type:'thinking', em:'🛍️',
+    txt:'Bazı tüccarlar Hint diyarına uzanan yeni bir ticaret hattı açılabileceğini söylüyor. Yol uzun ve tehlikeli.',
+    l:'Bu macera bize göre değil.',
+    r:'Servet risk alana gelir.',
+    rE:[{s:'hazine',d:8},{s:'halk',d:8},{s:'din',d:-12}]
+  },
+  {
+    type:'thinking', em:'🏛️',
+    txt:'Sarayda bazıları eski bir köprünün yeniden inşa edilmesini öneriyor. Kervan yolları o bölgeden geçiyor.',
+    l:'Masrafa değmez.',
+    r:'Köprüyü yeniden kurun.',
+    rE:[{s:'hazine',d:8},{s:'halk',d:8},{s:'ordu',d:-12}]
+  },
+  {
+    type:'thinking', em:'🔭',
+    txt:'Genç bilginler yeni bir rasathane kurmak için destek istiyor. Yıldızları incelemek istediklerini söylüyorlar.',
+    l:'Devlet yıldızla yönetilmez.',
+    r:'Bilgi zarar vermez.',
+    rE:[{s:'din',d:8},{s:'hazine',d:8},{s:'halk',d:-12}]
+  },
+  {
+    type:'thinking', em:'🤲',
+    txt:'Uzak bir beylik zor durumda. Yardım gönderirseniz ileride minnet duyabileceklerini söylüyorlar.',
+    l:'Kendi dertleri yeter.',
+    r:'İyilik unutulmaz.',
+    rE:[{s:'halk',d:8},{s:'din',d:8},{s:'hazine',d:-12}]
+  },
+  {
+    type:'thinking', em:'🍲',
+    txt:'Saray mutfağından arta kalan yemeklerin her gün fakirlere dağıtılması öneriliyor.',
+    l:'Bu sarayın işi değil.',
+    r:'Paylaşmak berekettir.',
+    rE:[{s:'halk',d:8},{s:'din',d:8},{s:'hazine',d:-12}]
+  },
+  {
+    type:'thinking', em:'🌙',
+    txt:'Bazı kadılar şehirlerde gece sokağa çıkma yasağı uygulanmasını öneriyor.',
+    l:'Halk kendi işini bilir.',
+    r:'Düzen için gerekli.',
+    rE:[{s:'ordu',d:8},{s:'din',d:8},{s:'halk',d:-12}]
+  },
+  {
+    type:'thinking', em:'🕌',
+    txt:'Bazı dervişler uzak diyarlara irşad yolculuğu yapmak istiyor. Saraydan destek bekliyorlar.',
+    l:'Kendi yollarına gitsinler.',
+    r:'Destek verin.',
+    rE:[{s:'din',d:8},{s:'halk',d:8},{s:'hazine',d:-12}]
+  },
+  {
+    type:'thinking', em:'📚',
+    txt:'Genç şehzadeler için yeni bir eğitim düzeni kurulması öneriliyor.',
+    l:'Eski usul yeterlidir.',
+    r:'Yeni düzen kurun.',
+    rE:[{s:'din',d:8},{s:'halk',d:8},{s:'hazine',d:-12}]
+  },
+  {
+    type:'thinking', em:'👑',
+    txt:'Sarayda bazıları padişahın yılda bir kez halkın arasına karışmasını öneriyor.',
+    l:'Devlet mesafeyle yönetilir.',
+    r:'Halkın nabzını tutalım.',
+    rE:[{s:'halk',d:10},{s:'ordu',d:-8},{s:'hazine',d:-8}]
+  }
+];
+
+// ══════════════════════════════════════
 // ZORLUK SEVİYELERİ — Sabit Ayarlar
 // Not: Oyun her zaman 'hard' (zor) modda çalışır.
 //      Kolay/normal ayarları ileride kullanılmak üzere kodda mevcuttur.
@@ -1553,9 +1686,14 @@ let heraldUsed = {};    // örn: {"hazine_low": true, "ordu_high": true}
 let traitReductions = {hazine:0, ordu:0, halk:0, din:0};
 
 // Mizah kartı takibi
-let humorTurnCounter = 0;        // Son mizah kartından beri geçen tur sayısı
-let humorNextThreshold = 10;     // Kaç turda bir mizah kartı gelecek (10–12 arası rastgele)
+let humorTurnCounter = 0;        // Son mizah kartından beri geçen normal tur sayısı
+let humorNextThreshold = 7;      // Kaç turda bir mizah kartı gelecek (7–10 arası rastgele)
 let humorLastIdx = -1;           // Aynı kartın üst üste gelmemesi için son index
+
+// Düşünme kartı takibi
+let thinkingTurnCounter = 0;     // Son düşünme kartından beri geçen normal tur sayısı
+let thinkingNextThreshold = 5;   // Kaç turda bir düşünme kartı gelecek (5–7 arası rastgele)
+let thinkingLastIdx = -1;        // Aynı kartın üst üste gelmemesi için son index
 
 function shuffle() {
   order = [...Array(CARDS.length).keys()];
@@ -1637,10 +1775,30 @@ function checkHerald() {
   return null;
 }
 
-// ══ MİZAH KART KONTROLÜ ══
-// Her 10–12 turda bir rastgele mizah kartı döndürür, yoksa null
-function checkHumor() {
+// ══ ÖZEL KART SAYAÇLARI — sadece normal kart turlarında artırılır ══
+function tickSpecialCounters() {
   humorTurnCounter++;
+  thinkingTurnCounter++;
+}
+
+// ══ DÜŞÜNME KART KONTROLÜ ══
+// Her 5–7 normal turda bir döndürür; min 4 normal kart cooldown
+function checkThinking() {
+  if(thinkingTurnCounter < thinkingNextThreshold) return null;
+
+  let idx;
+  do { idx = Math.floor(Math.random() * THINKING_CARDS.length); }
+  while(idx === thinkingLastIdx && THINKING_CARDS.length > 1);
+
+  thinkingLastIdx = idx;
+  thinkingTurnCounter = 0;
+  thinkingNextThreshold = 5 + Math.floor(Math.random() * 3); // 5, 6 veya 7
+  return THINKING_CARDS[idx];
+}
+
+// ══ MİZAH KART KONTROLÜ ══
+// Her 7–10 normal turda bir döndürür; min 6 normal kart cooldown
+function checkHumor() {
   if(humorTurnCounter < humorNextThreshold) return null;
 
   // Eşiğe ulaşıldı: rastgele bir mizah kartı seç (üst üste aynı gelmesin)
@@ -1650,7 +1808,7 @@ function checkHumor() {
 
   humorLastIdx = idx;
   humorTurnCounter = 0;
-  humorNextThreshold = 10 + Math.floor(Math.random() * 3); // 10, 11 veya 12
+  humorNextThreshold = 7 + Math.floor(Math.random() * 4); // 7, 8, 9 veya 10
   return HUMOR_CARDS[idx];
 }
 
@@ -1810,7 +1968,7 @@ function renderCard() {
   const typeLbl = document.getElementById('card-type-lbl');
   const iconEl = document.getElementById('card-icon');
 
-  CEL.classList.remove('boost-card','crisis-card','herald-card','humor-card');
+  CEL.classList.remove('boost-card','crisis-card','herald-card','humor-card','thinking-card');
   typeLbl.style.display = 'none';
 
   if(c.type === 'herald') {
@@ -1835,6 +1993,17 @@ function renderCard() {
     document.getElementById('cr').textContent = c.r;
     document.getElementById('year').textContent = yr;
     CEL.classList.add('humor-card');
+    document.getElementById('btn-l').style.visibility = 'visible';
+    document.getElementById('btn-r').style.visibility = 'visible';
+  } else if(c.type === 'thinking') {
+    // Düşünme kartı: turkuaz çerçeve, 3 stat etkiler, oyuncuya ipucu yok
+    iconEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22" fill="none" stroke="#00d2c8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:62%;height:62%;display:block"><path d="M11,3 L20,7 L20,13 Q20,18 11,21 Q2,18 2,13 L2,7 Z" fill="rgba(0,210,200,0.1)"/><path d="M11,8 L11,13 M11,15 L11,15.5" stroke="#00d2c8" stroke-width="2" stroke-linecap="round"/></svg>';
+    document.getElementById('card-char').textContent = '✦ Önemli Bir Mesele Var ✦';
+    document.getElementById('card-text').textContent = c.txt;
+    document.getElementById('cl').textContent = c.l;
+    document.getElementById('cr').textContent = c.r;
+    document.getElementById('year').textContent = yr;
+    CEL.classList.add('thinking-card');
     document.getElementById('btn-l').style.visibility = 'visible';
     document.getElementById('btn-r').style.visibility = 'visible';
   } else {
@@ -1884,6 +2053,73 @@ function applyChoice(side) {
       CEL.classList.remove('swipe-l','swipe-r');
       CEL.style.opacity = '0'; CEL.style.transform = '';
       currentCard = nextCard();
+      renderCard();
+      requestAnimationFrame(() => {
+        CEL.style.opacity = '1';
+        CEL.classList.add('pop-in');
+        setTimeout(() => { CEL.classList.remove('pop-in'); anim=false; }, 380);
+      });
+    }, 420);
+    return;
+  }
+
+  // Düşünme kartı: 3 stat etkiler, yıl ilerler, özel kart sayaçları tetiklenmez
+  if(c.type === 'thinking') {
+    // Sağ seçenek: rE etkileri; Sol seçenek: rE'nin tersi
+    const effects = side === 'r'
+      ? c.rE
+      : c.rE.map(e => ({s:e.s, d:-e.d}));
+
+    const prevStats = {...stats};
+    for(const e of effects) {
+      const red = traitReductions[e.s] || 0;
+      if(e.d > 0) {
+        stats[e.s] = Math.min(100, stats[e.s] + e.d);
+      } else {
+        const v = Math.round(Math.abs(e.d) * (1 - red));
+        stats[e.s] = Math.max(0, stats[e.s] - v);
+      }
+    }
+    ci++;
+
+    // Pasif bozulma
+    const _p2 = DIFFICULTY_CONFIG[currentDifficulty].passive;
+    stats.hazine = Math.max(0, stats.hazine - _p2.hazine * (1 - traitReductions.hazine));
+    stats.ordu   = Math.max(0, stats.ordu   - _p2.ordu   * (1 - traitReductions.ordu));
+    stats.halk   = Math.max(0, stats.halk   - _p2.halk   * (1 - traitReductions.halk));
+    stats.din    = Math.max(0, stats.din    - _p2.din    * (1 - traitReductions.din));
+
+    // Dinamik baskı güncelleme
+    const minNow2 = Math.min(...Object.values(stats));
+    const minBefore2 = Math.min(...Object.values(prevStats));
+    const allAbove2 = Object.values(stats).every(v => v > 30);
+    const _d2 = DIFFICULTY_CONFIG[currentDifficulty];
+    if(allAbove2 && minNow2 >= minBefore2 - 2) {
+      stability = Math.min(stability + 1, _d2.maxStability);
+    } else {
+      stability = Math.max(0, stability - 2);
+    }
+    if(stability >= _d2.pressureHigh)      pressureLevel = 2;
+    else if(stability >= _d2.pressureMid)  pressureLevel = 1;
+    else                                   pressureLevel = 0;
+
+    yr++;
+
+    CEL.style.transform = '';
+    CEL.classList.add(side==='l'?'swipe-l':'swipe-r');
+    setTimeout(() => {
+      CEL.classList.remove('swipe-l','swipe-r');
+      CEL.style.opacity = '0'; CEL.style.transform = '';
+
+      const lost2 = Object.values(stats).some(v=>v<=0);
+      const won2  = yr > 50;
+      if(lost2 || won2) { renderStats(); gameOver(lost2); anim=false; return; }
+
+      renderStats();
+      // Düşünme kartı sonrası: haberci > mizah > normal (düşünme kart sayacı sıfırlandı, erken gelmez)
+      const herald2 = checkHerald();
+      const humor2  = !herald2 ? checkHumor() : null;
+      currentCard = herald2 || humor2 || nextCard();
       renderCard();
       requestAnimationFrame(() => {
         CEL.style.opacity = '1';
@@ -2037,9 +2273,11 @@ function applyChoice(side) {
     if(lost || won) { renderStats(); gameOver(lost); anim=false; return; }
 
     renderStats();
+    tickSpecialCounters();
     const herald = checkHerald();
-    const humor  = !herald ? checkHumor() : null;
-    currentCard = herald ? herald : humor ? humor : nextCard();
+    const thinking = !herald ? checkThinking() : null;
+    const humor    = !herald && !thinking ? checkHumor() : null;
+    currentCard = herald || thinking || humor || nextCard();
     renderCard();
 
     requestAnimationFrame(() => {
@@ -2138,8 +2376,11 @@ function restartGame() {
   heraldUsed = {};
   traitReductions = {hazine:0, ordu:0, halk:0, din:0};
   humorTurnCounter = 0;
-  humorNextThreshold = 10 + Math.floor(Math.random() * 3);
+  humorNextThreshold = 7 + Math.floor(Math.random() * 4);
   humorLastIdx = -1;
+  thinkingTurnCounter = 0;
+  thinkingNextThreshold = 5 + Math.floor(Math.random() * 3);
+  thinkingLastIdx = -1;
   shuffle();
   currentCard = TUTORIAL_CARD;
 
