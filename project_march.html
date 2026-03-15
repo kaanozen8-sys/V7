@@ -388,6 +388,13 @@
   #card.herald-high .card-char { color: #2a8040; }
   #card.herald-card #btn-l { opacity: 0; pointer-events: none; }
 
+  /* ══ MİZAH KARTLARI ══ */
+  #card.humor-card {
+    border: 2px solid rgba(220,100,160,0.7);
+    box-shadow: 0 0 22px rgba(220,100,160,0.22), 0 8px 32px rgba(0,0,0,0.45);
+  }
+  #card.humor-card .card-char { color: #c0407a; }
+
   /* ══ ANIMATIONS ══ */
   @keyframes swipeL { to { transform: translateX(-130%) rotate(-20deg); opacity: 0; } }
   @keyframes swipeR { to { transform: translateX(130%)  rotate(20deg);  opacity: 0; } }
@@ -1369,6 +1376,132 @@ const HERALD_CARDS = {
 const TIER_VALS = { w:13, n:16, s:20 };  // Simetrik: boost = debuff
 
 // ══════════════════════════════════════
+// MİZAH KARTLARI — stat etkilemez, her 10–12 turda bir gelir
+// ══════════════════════════════════════
+const HUMOR_CARDS = [
+  {
+    type:'humor', em:'😂',
+    txt:'Veziriniz soruyor:\n"Bir kadını kızdırmak mı daha tehlikeli, düşman hükümdarı mı?"',
+    l:'İki kadını birden kızdırmak.',
+    r:'Düşman bir kadını kızdırmak.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Sadrazam soruyor:\n"Hünkarım, bahar geldiğinde Manisa\'ya gider miyiz?"',
+    l:'Baharı görürsek…',
+    r:'Bahar gelsin gidelim.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Kahvehanelerde yeni bir kart oyunu popüler olmuş. Söylenene göre bu oyunda halk padişah gibi kararlar veriyormuş.',
+    l:'Halkın işi gücü yok.',
+    r:'Ben de merak ettim.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Harem ağalarından biri endişeyle soruyor:\n"Hünkarım… asker sayısı yetmezse bizi de orduya alırlar mı?"',
+    l:'Sıraya girin.',
+    r:'Merak etmeyin.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Saray habercisinin posta güvercinlerine kendi aşk mektuplarını taşıttığını öğreniyorsunuz.',
+    l:'Aşkın gözü kördür.',
+    r:'Odama çağırın bakalım.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Bir seyyah saraya geliyor. Gördüğü her şeyi abartarak yazdığını söylüyor.',
+    l:'Yazsın bakalım.',
+    r:'Benden de bahsetsin.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Bir şair sizi öven 356 beyitlik kasideye başlıyor.',
+    l:'Sabaha kadar dinlediniz.',
+    r:'Biraz daha uzun yazmasını istediniz.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Saray kedisi gelip tahtın üzerine oturdu.',
+    l:'Bırakın otursun.',
+    r:'Sarayın maskotu yapın.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Ulema günlerdir tartışıyor:\n"Kahve içmek haram mıdır?"',
+    l:'Tartışmaya devam edin.',
+    r:'İlginç görünüyor.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Yeniçeriler kazan başında homurdanıyor:\n"Pilav yine tatsız."',
+    l:'Pilavı düzeltin.',
+    r:'Pilav gayet iyi.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Yeniçeriler başlıklarının çok ağır olduğunu söylüyor.',
+    l:'Yeni başlıklar hazırlayın.',
+    r:'Şikayet etmeyi bırakın.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Bir adam fetva soruyor:\n"Komşunun horozu çok erken ötüyor."',
+    l:'Horozu sustursunlar.',
+    r:'Horozun suçu yok.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Bir adam fetva soruyor:\n"Kedim komşunun balığını yemiş."',
+    l:'Tazmin etsin.',
+    r:'Kedi suçlu değil.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Bir adam fetva soruyor:\n"Sakalım seyrek çıkıyor."',
+    l:'Sabret.',
+    r:'Bu kaderdir.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Yeniçerilerin kazan kaldırdığı haberleri geliyor. Hoşafın üstünde yağ istediklerini söylüyorlar.',
+    l:'Hoşafa yağ ekleyin!',
+    r:'Ocak devlet içindir.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Saraya bir İtalyan ressam geldi. Sizi çizmek istiyor. Olduğunuzdan daha yakışıklı çizeceğine söz verdi.',
+    l:'Bu ne cüret!',
+    r:'Çizsin bakalım.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Şehzadeniz soruyor:\n"Hünkarım… karar alınır mı, yoksa verilir mi?"',
+    l:'Kafamı karıştırma.',
+    r:'Devlet büyük, ikisi de olur.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Divanda Girit meselesi konuşuluyor. Saray aşçısı yanlış anlamış ve soruyor:\n"Hünkarım… yemekte tirit mi istediniz?"',
+    l:'Bu devlet meselesidir.',
+    r:'Önce tirit yiyelim.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Saray şairi sizi öven yeni bir şiir yazmış. Ama sonunda küçük bir not düşmüş:\n"Maaşımda küçük bir artışı hak eder miyim?"',
+    l:'Şiir güzel.',
+    r:'Maaş kısmını çıkar.'
+  },
+  {
+    type:'humor', em:'😂',
+    txt:'Saray müneccimi yıldızlara bakıp konuşuyor:\n"Hünkarım, yıldızlar bugün karar almamanızı söylüyor."',
+    l:'Yıldızlar devleti yönetmez.',
+    r:'Bugün tatil.'
+  }
+];
+
+// ══════════════════════════════════════
 // ZORLUK SEVİYELERİ — Sabit Ayarlar
 // Not: Oyun her zaman 'hard' (zor) modda çalışır.
 //      Kolay/normal ayarları ileride kullanılmak üzere kodda mevcuttur.
@@ -1418,6 +1551,11 @@ let heraldUsed = {};    // örn: {"hazine_low": true, "ordu_high": true}
 
 // Trait (geçmiş) sistemi — her stat için %10 kayıp azaltma
 let traitReductions = {hazine:0, ordu:0, halk:0, din:0};
+
+// Mizah kartı takibi
+let humorTurnCounter = 0;        // Son mizah kartından beri geçen tur sayısı
+let humorNextThreshold = 10;     // Kaç turda bir mizah kartı gelecek (10–12 arası rastgele)
+let humorLastIdx = -1;           // Aynı kartın üst üste gelmemesi için son index
 
 function shuffle() {
   order = [...Array(CARDS.length).keys()];
@@ -1497,6 +1635,23 @@ function checkHerald() {
     }
   }
   return null;
+}
+
+// ══ MİZAH KART KONTROLÜ ══
+// Her 10–12 turda bir rastgele mizah kartı döndürür, yoksa null
+function checkHumor() {
+  humorTurnCounter++;
+  if(humorTurnCounter < humorNextThreshold) return null;
+
+  // Eşiğe ulaşıldı: rastgele bir mizah kartı seç (üst üste aynı gelmesin)
+  let idx;
+  do { idx = Math.floor(Math.random() * HUMOR_CARDS.length); }
+  while(idx === humorLastIdx && HUMOR_CARDS.length > 1);
+
+  humorLastIdx = idx;
+  humorTurnCounter = 0;
+  humorNextThreshold = 10 + Math.floor(Math.random() * 3); // 10, 11 veya 12
+  return HUMOR_CARDS[idx];
 }
 
 // ══ SVG İKON HARİTASI (dönem uyumlu, emoji yok) ══
@@ -1655,7 +1810,7 @@ function renderCard() {
   const typeLbl = document.getElementById('card-type-lbl');
   const iconEl = document.getElementById('card-icon');
 
-  CEL.classList.remove('boost-card','crisis-card','herald-card');
+  CEL.classList.remove('boost-card','crisis-card','herald-card','humor-card');
   typeLbl.style.display = 'none';
 
   if(c.type === 'herald') {
@@ -1670,6 +1825,17 @@ function renderCard() {
     CEL.classList.add('herald-card', c.dir === 'low' ? 'herald-low' : 'herald-high');
     // Sol seçeneği gizle
     document.getElementById('btn-l').style.visibility = 'hidden';
+    document.getElementById('btn-r').style.visibility = 'visible';
+  } else if(c.type === 'humor') {
+    // Mizah kartı: pembe çerçeve, iki seçenek, stat etkilenmez
+    iconEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22" fill="none" stroke="#4a2e0e" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:62%;height:62%;display:block"><circle cx="11" cy="11" r="8"/><path d="M7.5,13.5 Q11,17 14.5,13.5"/><circle cx="8.5" cy="9" r="1" fill="#4a2e0e" stroke="none"/><circle cx="13.5" cy="9" r="1" fill="#4a2e0e" stroke="none"/></svg>';
+    document.getElementById('card-char').textContent = '✦ Saray Fısıltıları ✦';
+    document.getElementById('card-text').textContent = c.txt;
+    document.getElementById('cl').textContent = c.l;
+    document.getElementById('cr').textContent = c.r;
+    document.getElementById('year').textContent = yr;
+    CEL.classList.add('humor-card');
+    document.getElementById('btn-l').style.visibility = 'visible';
     document.getElementById('btn-r').style.visibility = 'visible';
   } else {
     document.getElementById('btn-l').style.visibility = 'visible';
@@ -1709,6 +1875,24 @@ function applyChoice(side) {
   const c = currentCard;
   const CEL = document.getElementById('card');
   anim = true;
+
+  // Mizah kartı: her iki yön geçerli, stat/yıl değişmez
+  if(c.type === 'humor') {
+    CEL.style.transform = '';
+    CEL.classList.add(side==='l'?'swipe-l':'swipe-r');
+    setTimeout(() => {
+      CEL.classList.remove('swipe-l','swipe-r');
+      CEL.style.opacity = '0'; CEL.style.transform = '';
+      currentCard = nextCard();
+      renderCard();
+      requestAnimationFrame(() => {
+        CEL.style.opacity = '1';
+        CEL.classList.add('pop-in');
+        setTimeout(() => { CEL.classList.remove('pop-in'); anim=false; }, 380);
+      });
+    }, 420);
+    return;
+  }
 
   // Haberci kart: sadece sağ ok geçerli, stat/yıl değişmez
   if(c.type === 'herald') {
@@ -1854,7 +2038,8 @@ function applyChoice(side) {
 
     renderStats();
     const herald = checkHerald();
-    currentCard = herald ? herald : nextCard();
+    const humor  = !herald ? checkHumor() : null;
+    currentCard = herald ? herald : humor ? humor : nextCard();
     renderCard();
 
     requestAnimationFrame(() => {
@@ -1952,6 +2137,9 @@ function restartGame() {
   stability=0; pressureLevel=0;
   heraldUsed = {};
   traitReductions = {hazine:0, ordu:0, halk:0, din:0};
+  humorTurnCounter = 0;
+  humorNextThreshold = 10 + Math.floor(Math.random() * 3);
+  humorLastIdx = -1;
   shuffle();
   currentCard = TUTORIAL_CARD;
 
